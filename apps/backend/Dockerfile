@@ -5,13 +5,14 @@ FROM node:18-alpine AS base
 FROM base AS deps
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --only=production && npm cache clean --force
 
 # Build the application
 FROM base AS builder
 WORKDIR /app
+COPY package*.json ./
+RUN npm install
 COPY . .
-COPY --from=deps /app/node_modules ./node_modules
 RUN npm run build
 
 # Production image, copy all the files and run the app
