@@ -1,0 +1,9 @@
+{
+  "components/dashboard/ExchangeRateChart.tsx -> react-apexcharts": {
+    "id": 9714,
+    "files": [
+      "static/chunks/00f2183e.aa72bbf6e22ab9c6.js",
+      "static/chunks/714.bb49e3570bd10da1.js"
+    ]
+  }
+}
