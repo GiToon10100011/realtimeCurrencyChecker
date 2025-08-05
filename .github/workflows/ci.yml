@@ -1,0 +1,113 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: apps/frontend/package-lock.json
+          
+      - name: Install dependencies
+        run: |
+          cd apps/frontend
+          npm ci
+          
+      - name: Run linting
+        run: |
+          cd apps/frontend
+          npm run lint
+          
+      - name: Build frontend
+        run: |
+          cd apps/frontend
+          npm run build
+          
+  test-backend:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: apps/backend/package-lock.json
+          
+      - name: Install dependencies
+        run: |
+          cd apps/backend
+          npm ci
+          
+      - name: Run linting
+        run: |
+          cd apps/backend
+          npm run lint
+          
+      - name: Run tests
+        run: |
+          cd apps/backend
+          npm test
+        env:
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          NODE_ENV: test
+          
+      - name: Build backend
+        run: |
+          cd apps/backend
+          npm run build
+          
+  test-shared:
+    name: Test Shared Packages
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: packages/shared/package-lock.json
+          
+      - name: Install dependencies
+        run: |
+          cd packages/shared
+          npm ci
+          
+      - name: Build shared packages
+        run: |
+          cd packages/shared
+          npm run build
