@@ -145,7 +145,7 @@ npm run dev
 ```
 currencyDashboard/
 ├── apps/
-│   ├── frontend/                   # Next.js React 애플리케이션
+│   ├── frontend/                   # Next.js 애플리케이션
 │   │   ├── src/
 │   │   │   ├── app/               # App Router (Next.js 15)
 │   │   │   ├── components/        # React 컴포넌트
