@@ -14,6 +14,7 @@ interface UseExchangeRatesReturn {
   chartData: ChartData[]
   isConnected: boolean
   error: string | null
+  isLoading: boolean
 }
 
 // 더미 데이터
@@ -74,17 +75,69 @@ export function useExchangeRates({
   thresholdKRW
 }: UseExchangeRatesProps): UseExchangeRatesReturn {
   const [socket, setSocket] = useState<Socket | null>(null)
-  const [exchangeRates, setExchangeRates] = useState<ExchangeRate[]>(
-    DUMMY_EXCHANGE_RATES.filter(rate => selectedCurrencies.includes(rate.currency))
-  )
+  const [exchangeRates, setExchangeRates] = useState<ExchangeRate[]>([])
   const [chartData, setChartData] = useState<ChartData[]>(DUMMY_CHART_DATA)
   const [isConnected, setIsConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  // 초기 API 호출
+  const fetchInitialRates = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      console.log('Fetching from:', `${apiUrl}/api/exchange-rates`)
+      
+      const response = await fetch(`${apiUrl}/api/exchange-rates`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      console.log('Response status:', response.status)
+      console.log('Response ok:', response.ok)
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch exchange rates: ${response.status} ${response.statusText}`)
+      }
+      
+      const result = await response.json()
+      console.log('API Response:', result)
+      
+      // API 응답에서 data 필드 추출 및 날짜 변환
+      const data: ExchangeRate[] = (result.data || []).map((rate: any) => ({
+        ...rate,
+        timestamp: typeof rate.timestamp === 'string' ? new Date(rate.timestamp) : rate.timestamp
+      }))
+      const filteredData = data.filter(rate => selectedCurrencies.includes(rate.currency))
+      
+      console.log('Filtered data:', filteredData)
+      console.log('Selected currencies:', selectedCurrencies)
+      
+      setExchangeRates(filteredData)
+      setError(null)
+    } catch (err) {
+      console.error('Failed to fetch initial exchange rates:', err)
+      // Fallback to dummy data if API fails
+      setExchangeRates(
+        DUMMY_EXCHANGE_RATES.filter(rate => selectedCurrencies.includes(rate.currency))
+      )
+      setError('API 연결 실패, 샘플 데이터 사용 중')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [selectedCurrencies])
+
+  // 컴포넌트 마운트 시 초기 데이터 가져오기
+  useEffect(() => {
+    fetchInitialRates()
+  }, [fetchInitialRates])
 
   useEffect(() => {
     if (socket?.connected) return
 
-    const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001', {
+    const newSocket = io(process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3001', {
       transports: ['websocket'],
       upgrade: false,
     })
@@ -106,15 +159,20 @@ export function useExchangeRates({
       setIsConnected(false)
     })
 
-    newSocket.on('exchangeRateUpdate', (data: ExchangeRate) => {
+    newSocket.on('exchangeRateUpdate', (data: any) => {
+      const exchangeRate: ExchangeRate = {
+        ...data,
+        timestamp: typeof data.timestamp === 'string' ? new Date(data.timestamp) : data.timestamp
+      }
+      
       setExchangeRates(prev => {
-        const existingIndex = prev.findIndex(rate => rate.currency === data.currency)
+        const existingIndex = prev.findIndex(rate => rate.currency === exchangeRate.currency)
         if (existingIndex >= 0) {
           const updated = [...prev]
-          updated[existingIndex] = data
+          updated[existingIndex] = exchangeRate
           return updated
         }
-        return [...prev, data]
+        return [...prev, exchangeRate]
       })
     })
 
@@ -144,19 +202,16 @@ export function useExchangeRates({
     }
   }, [selectedCurrencies, thresholdKRW, socket, isConnected])
 
-  // selectedCurrencies가 변경될 때 더미 데이터 업데이트
+  // selectedCurrencies가 변경될 때 API 다시 호출
   useEffect(() => {
-    if (!isConnected) {
-      setExchangeRates(
-        DUMMY_EXCHANGE_RATES.filter(rate => selectedCurrencies.includes(rate.currency))
-      )
-    }
-  }, [selectedCurrencies, isConnected])
+    fetchInitialRates()
+  }, [fetchInitialRates])
 
   return {
     exchangeRates,
     chartData,
     isConnected,
-    error
+    error,
+    isLoading
   }
 }

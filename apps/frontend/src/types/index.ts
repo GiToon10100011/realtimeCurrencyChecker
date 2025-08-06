@@ -5,8 +5,9 @@ export interface ExchangeRate {
   previousRate: number
   change: number
   changePercent: number
-  timestamp: Date
+  timestamp: Date | string
   isPositive: boolean
+  source?: string
 }
 
 export interface CurrencyConfig {

@@ -8,7 +8,7 @@ class ExchangeRate {
     previousRate;
     timestamp;
     source;
-    constructor(currency, currencyName, rate, previousRate, timestamp, source = 'HANA_BANK') {
+    constructor(currency, currencyName, rate, previousRate, timestamp, source = 'KOREA_EXIMBANK') {
         this.currency = currency;
         this.currencyName = currencyName;
         this.rate = rate;

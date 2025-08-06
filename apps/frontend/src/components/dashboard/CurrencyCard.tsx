@@ -34,12 +34,21 @@ export function CurrencyCard({ exchangeRate }: CurrencyCardProps) {
     );
   };
 
-  const formatTime = (date: Date) => {
-    return new Intl.DateTimeFormat("ko-KR", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    }).format(date);
+  const formatTime = (date: Date | string) => {
+    try {
+      const validDate = typeof date === 'string' ? new Date(date) : date;
+      if (isNaN(validDate.getTime())) {
+        return '시간 정보 없음';
+      }
+      return new Intl.DateTimeFormat("ko-KR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      }).format(validDate);
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return '시간 정보 없음';
+    }
   };
 
   const displayChange = change;

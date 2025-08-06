@@ -11,7 +11,7 @@ import { Wifi, WifiOff, AlertCircle } from 'lucide-react'
 
 export function CurrencyDashboard() {
   const { settings, updateSettings, saveSettings } = useUserSettings()
-  const { exchangeRates, chartData, isConnected, error } = useExchangeRates({
+  const { exchangeRates, chartData, isConnected, error, isLoading } = useExchangeRates({
     selectedCurrencies: settings.selectedCurrencies,
     thresholdKRW: settings.thresholdKRW,
   })
@@ -69,8 +69,15 @@ export function CurrencyDashboard() {
                 📊
               </div>
               <p className="text-gray-500 dark:text-gray-400">
-                {error ? '환율 데이터를 불러올 수 없습니다' : '환율 데이터를 불러오는 중...'}
+                {error ? '환율 데이터를 불러올 수 없습니다' : 
+                 isLoading ? '환율 데이터를 불러오는 중...' : 
+                 '선택된 통화의 환율 데이터가 없습니다'}
               </p>
+              {!error && !isLoading && (
+                <p className="text-xs text-gray-400 mt-2">
+                  설정에서 표시할 통화를 선택해주세요
+                </p>
+              )}
             </div>
           )}
         </div>

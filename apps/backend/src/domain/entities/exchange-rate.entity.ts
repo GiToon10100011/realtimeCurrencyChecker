@@ -5,7 +5,7 @@ export class ExchangeRate {
     public readonly rate: number,
     public readonly previousRate: number,
     public readonly timestamp: Date,
-    public readonly source: string = 'HANA_BANK'
+    public readonly source: string = 'KOREA_EXIMBANK'
   ) {}
 
   get change(): number {
